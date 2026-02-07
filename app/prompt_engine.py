@@ -1,10 +1,8 @@
 # app/prompt_engine.py
 
-import openai
+import ollama
 import random
-from config import OPENAI_API_KEY
-
-openai.api_key = OPENAI_API_KEY
+from config import OLLAMA_MODEL
 
 COMEDIC_KEY = "comedic"
 FLIRTY_KEY = "flirty"
@@ -88,17 +86,20 @@ def generate_prompt(style_template: str, keywords: list, sentiment: str) -> str:
     return system_prompt
 
 
-def call_gpt4(prompt: str, temperature: float = 0.7, max_tokens: int = 150) -> str:
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+def call_ollama(prompt: str, temperature: float = 0.7, max_tokens: int = 150) -> str:
+    """Call Ollama API with the specified model."""
+    response = ollama.chat(
+        model=OLLAMA_MODEL,
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt},
         ],
-        max_tokens=max_tokens,
-        temperature=temperature,
+        options={
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        }
     )
-    return response.choices[0].message["content"].strip()
+    return response['message']['content'].strip()
 
 
 def generate_comment(profile_text: str) -> str:
@@ -116,5 +117,5 @@ def generate_comment(profile_text: str) -> str:
 
     style_template = choose_template(sentiment, keywords)
     final_prompt = generate_prompt(style_template, keywords, sentiment)
-    generated_text = call_gpt4(final_prompt)
+    generated_text = call_ollama(final_prompt)
     return generated_text
